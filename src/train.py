@@ -9,9 +9,15 @@ import mlflow
 import mlflow.tensorflow
 
 # Assuming these modules exist and are compatible with TensorFlow
-import input_pipeline
-import models
-import pin_util
+try:
+    from . import input_pipeline
+    from . import models
+    from . import pin_util
+except ImportError:
+    import pin_util  # Fallback for running the script directly
+    import input_pipeline
+    import models
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a model for the shop the look dataset.")
@@ -26,7 +32,7 @@ def parse_args():
     parser.add_argument("--eval_every_steps", type=int, default=2000, help="Eval every this step.")
     parser.add_argument("--checkpoint_every_steps", type=int, default=100000, help="Checkpoint every this step.")
     parser.add_argument("--max_steps", type=int, default=30000, help="Max number of steps.")
-    parser.add_argument("--work_dir", default="/tmp", help="Work directory.")
+    parser.add_argument("--work_dir", default="tmp", help="Work directory.")
     parser.add_argument("--model_name", default="pinterest_stl_model", help="Model name.")
     parser.add_argument("--restore_checkpoint", action="store_true", help="If true, restore checkpoint.")
     parser.add_argument("--mlflow_experiment_name", default="recsys-pinterest", help="MLflow experiment name.")
@@ -119,7 +125,7 @@ def main():
             loss = train_step(scene, pos_product, neg_product)
 
             if step % args.checkpoint_every_steps == 0:
-                save_path = manager.save()
+                save_path = manager.save(checkpoint_number = step + 1)
                 print(f"Saved checkpoint for step {step}: {save_path}")
 
             if step % args.eval_every_steps == 0 and step > 0:
@@ -143,25 +149,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# def custom_loss(regularization=1.0):
-#     def loss_fn(y_true, y_pred):
-#         # Unpack the model outputs
-#         pos_score, neg_score, scene_embed, pos_embed, neg_embed = y_pred
-        
-#         # Triplet loss
-#         triplet_loss = tf.reduce_sum(tf.nn.relu(1.0 + neg_score - pos_score))
-        
-#         # Regularization loss
-#         reg_loss = tf.reduce_sum(tf.nn.relu(tf.sqrt(tf.reduce_sum(tf.square(scene_embed), axis=-1)) - 1.0)) + \
-#                    tf.reduce_sum(tf.nn.relu(tf.sqrt(tf.reduce_sum(tf.square(pos_embed), axis=-1)) - 1.0)) + \
-#                    tf.reduce_sum(tf.nn.relu(tf.sqrt(tf.reduce_sum(tf.square(neg_embed), axis=-1)) - 1.0))
-        
-#         # Total loss
-#         total_loss = triplet_loss + regularization * reg_loss
-        
-#         # Normalize by batch size
-#         return total_loss / tf.cast(tf.shape(scene_embed)[0], tf.float32)
-    
-#     return loss_fn

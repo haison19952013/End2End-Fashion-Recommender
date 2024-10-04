@@ -5,6 +5,8 @@ __pycache__/
 # Untrack document
 document/
 .vscode/
+mlruns/
+tmp/
 
 # C extensions
 *.so

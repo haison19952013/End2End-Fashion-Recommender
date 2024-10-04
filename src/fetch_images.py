@@ -11,7 +11,7 @@ from typing import FrozenSet
 import os
 import argparse
 import requests
-from . import pin_util
+from src import pin_util
 
 def get_keys(input_file: str, max_lines: int) -> FrozenSet[str]:
     """
