@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#
 # Copyright 2022 Hector Yee, Bryan Bischoff
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,21 +20,10 @@
 """
 import random
 import json
+import argparse
 from typing import Dict
 
-from absl import app
-from absl import flags
-
-import pin_util
-
-FLAGS = flags.FLAGS
-_INPUT_FILE = flags.DEFINE_string("input_file", None, "Input cat json file.")
-_OUTPUT_HTML = flags.DEFINE_string("output_html", None, "The output html file.")
-_NUM_ITEMS = flags.DEFINE_integer("num_items", 10, "Numer of items to recommend.")
-
-# Required flag.
-flags.mark_flag_as_required("input_file")
-flags.mark_flag_as_required("output_html")
+import src.pin_util as pin_util
 
 def read_catalog(catalog: str) -> Dict[str, str]:
     """
@@ -46,7 +34,7 @@ def read_catalog(catalog: str) -> Dict[str, str]:
     result = json.loads(data)
     return result
 
-def dump_html(subset, output_html:str) -> None:
+def dump_html(subset, output_html: str) -> None:
     """
       Dumps a subset of items.
     """
@@ -66,15 +54,22 @@ def dump_html(subset, output_html:str) -> None:
             f.write(out)
         f.write("</TABLE></HTML>")
 
-def main(argv):
+def main():
     """Main function."""
-    del argv  # Unused.
+    parser = argparse.ArgumentParser(description="Generate HTML product recommendations from a JSON catalog.")
+    parser.add_argument("--input_file", required=True, help="Input catalog JSON file.")
+    parser.add_argument("--output_html", required=True, help="Output HTML file.")
+    parser.add_argument("--num_items", type=int, default=10, help="Number of items to recommend.")
+    
+    args = parser.parse_args()
 
-    catalog = read_catalog(_INPUT_FILE.value)
+    catalog = read_catalog(args.input_file)
     catalog = list(catalog.items())
     random.shuffle(catalog)
-    dump_html(catalog[:_NUM_ITEMS.value], _OUTPUT_HTML.value)
-
+    dump_html(catalog[:args.num_items], args.output_html)
 
 if __name__ == "__main__":
-    app.run(main)
+    main()
+    '''bash script
+    python random_item_recommender.py --input_file fashion-cat.json --output_html output.html --num_items 10
+    '''

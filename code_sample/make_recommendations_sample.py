@@ -33,7 +33,7 @@ import jax.numpy as jnp
 import numpy as np
 import tensorflow as tf
 
-import pin_util
+import src.pin_util as pin_util
 
 FLAGS = flags.FLAGS
 _PRODUCT_EMBED_ = flags.DEFINE_string("product_embed", None, "Product embedding json.")

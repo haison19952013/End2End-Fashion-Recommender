@@ -38,9 +38,9 @@ import numpy as np
 import tensorflow as tf
 import wandb
 
-import input_pipeline
+import src.input_pipeline as input_pipeline
 import Shop_the_Look_Recommender.models_sample as models_sample
-import pin_util
+import src.pin_util as pin_util
 
 FLAGS = flags.FLAGS
 _INPUT_FILE = flags.DEFINE_string("input_file", None, "Input cat json file.")

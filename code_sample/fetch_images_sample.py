@@ -29,7 +29,7 @@ from xmlrpc.client import boolean
 from absl import app
 from absl import flags
 
-import pin_util
+import src.pin_util as pin_util
 
 FLAGS = flags.FLAGS
 _INPUT_FILE = flags.DEFINE_string("input_file", None, "Input json file.")
