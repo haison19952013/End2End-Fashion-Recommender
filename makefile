@@ -7,7 +7,7 @@ setup:
 	$(pip) install -r requirements.txt
 
 get_data:
-	$(python) fetch_images.py --input_file ../STL-Dataset/fashion.json --output_dir database --max_lines 5
+	$(python) fetch_images.py --input_file ../STL-Dataset/fashion.json --output_dir ../database --max_lines 5
 
 run:
 	$(python) main.py
