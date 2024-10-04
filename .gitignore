@@ -4,6 +4,8 @@ __pycache__/
 *$py.class
 # Untrack document
 document/
+.vscode/
+
 # C extensions
 *.so
 
