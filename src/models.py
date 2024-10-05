@@ -60,6 +60,7 @@ class STLModel(tf.keras.Model):
     
     def __init__(self, output_size):
         super(STLModel, self).__init__()
+        self.output_size = output_size
         default_filters = [16, 32, 64, 128]
         
         # Define scene CNN and product CNN using the same architecture
@@ -109,4 +110,11 @@ class STLModel(tf.keras.Model):
                 metric.update_state(y, y_pred)
         # Return a dict mapping metric names to current value
         return {m.name: m.result() for m in self.metrics}
+    
+    def get_config(self):
+        return {"output_size": self.output_size}
+    
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
 

@@ -7,7 +7,7 @@ from io import StringIO
 import requests
 
 # Import the functions you want to test
-from src.fetch_images import get_keys, fetch_image
+from src.fetch_images_database import get_keys, fetch_image
 
 @pytest.fixture
 def temp_dir():

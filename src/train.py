@@ -145,7 +145,7 @@ def main():
         print(f"Saving model as {args.model_name}")
         model_path = os.path.join(args.work_dir, args.model_name)
         model.save(model_path)
-        mlflow.tensorflow.log_model(model, args.model_name)
+        mlflow.tensorflow.log_model(model, args.model_name, custom_objects={'STLModel': models.STLModel})
 
 if __name__ == "__main__":
     main()

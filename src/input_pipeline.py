@@ -17,6 +17,25 @@ from typing import Sequence, Tuple, Set
 import numpy as np
 import tensorflow as tf
 
+def generate_triplets(
+    scene_product: Sequence[Tuple[str, str]],
+    num_neg: int) -> Sequence[Tuple[str, str, str]]:
+    """Generate positive and negative triplets."""
+    count = len(scene_product)
+    train = []
+    test = []
+    for i in range(count):
+        scene, pos = scene_product[i]
+        is_test = i % 10 == 0
+        neg_indices = np.random.randint(0, count - 1, num_neg)
+        for neg_idx in neg_indices:
+            _, neg = scene_product[neg_idx]
+            if is_test:
+                test.append((scene, pos, neg))
+            else:
+                train.append((scene, pos, neg))
+    return train, test
+
 def normalize_image(img):
   img = tf.cast(img, dtype=tf.float32)
   img = (img / 255.0) - 0.5

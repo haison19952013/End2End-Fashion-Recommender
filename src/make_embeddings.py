@@ -23,111 +23,90 @@
 import random
 import json
 import os
-from typing import Sequence, Tuple
-
-from absl import app
-from absl import flags
-from absl import logging
-import flax
-from flax import linen as nn
-from flax.training import checkpoints
-from flax.training import train_state
-import jax
-import jax.numpy as jnp
+import argparse
 import numpy as np
 import tensorflow as tf
-import wandb
+from typing import Sequence, Tuple
+import models  # Your custom model library
+import input_pipeline  # Your input pipeline library
+import pin_util  # Utility for getting the valid scene-product pairs
 
-import src.input_pipeline as input_pipeline
-import Shop_the_Look_Recommender.models_sample as models_sample
-import src.pin_util as pin_util
+# Argument parser for CLI arguments
+def parse_args():
+    parser = argparse.ArgumentParser(description="Generates embeddings for scenes and products.")
+    parser.add_argument('--input_file', required=True, type=str, help="Input catalog JSON file.")
+    parser.add_argument('--image_dir', required=True, type=str, help="Directory containing downloaded images.")
+    parser.add_argument('--out_dir', default="/tmp", type=str, help="Output directory for embeddings.")
+    parser.add_argument('--output_size', default=64, type=int, help="Size of the output embeddings.")
+    parser.add_argument('--model_name', required=True, type=str, help="Pre-trained model name for embedding generation.")
+    parser.add_argument('--batch_size', default=8, type=int, help="Batch size for embedding generation.")
+    
+    return parser.parse_args()
 
-FLAGS = flags.FLAGS
-_INPUT_FILE = flags.DEFINE_string("input_file", None, "Input cat json file.")
-_IMAGE_DIRECTORY = flags.DEFINE_string(
-    "image_dir",
-    None,
-    "Directory containing downloaded images from the shop the look dataset.")
-_OUTDIR = flags.DEFINE_string("out_dir", "/tmp", "Output directory.")
-_OUTPUT_SIZE = flags.DEFINE_integer("output_size", 64, "Size of embeddings.") 
-_MODEL_NAME = flags.DEFINE_string(
-    "model_name",
-    None,
-    "Model name.")
-_BATCH_SIZE = flags.DEFINE_integer("batch_size", 8, "Batch size.")
+def main():
+    # Parse command-line arguments
+    args = parse_args()
 
-# Required flag.
-flags.mark_flag_as_required("model_name")
-flags.mark_flag_as_required("image_dir")
+    # Load valid scene-product pairs
+    scene_product = pin_util.get_valid_scene_product(args.image_dir, args.input_file)
+    print(f"Found {len(scene_product)} valid scene product pairs.")
 
+    # Extract unique scenes and products
+    unique_scenes = np.array(list(set(x[0] for x in scene_product)))
+    unique_products = np.array(list(set(x[1] for x in scene_product)))
+    print(f"Found {len(unique_scenes)} unique scenes.")
+    print(f"Found {len(unique_products)} unique products.")
 
-def main(argv):
-    """Main function."""
-    del argv  # Unused.
-
-    tf.config.set_visible_devices([], 'GPU')
-    tf.compat.v1.enable_eager_execution()
-    scene_product = pin_util.get_valid_scene_product(_IMAGE_DIRECTORY.value, _INPUT_FILE.value)
-    logging.info("Found %d valid scene product pairs." % len(scene_product))
-    unique_scenes = set(x[0] for x in scene_product)
-    unique_products = set(x[1] for x in scene_product)
-    logging.info("Found %d unique scenes.", len(unique_scenes))
-    logging.info("Found %d unique products.", len(unique_products))
-    unique_scenes = np.array(list(unique_scenes))
-    unique_products = np.array(list(unique_products))
-
-    model = models_sample.STLModel(output_size=_OUTPUT_SIZE.value)
-    state = None
-    logging.info("Attempting to read model %s", _MODEL_NAME.value)
-    with open(_MODEL_NAME.value, "rb") as f:
+    # Load the model and its parameters
+    model = models.STLModel(output_size=args.output_size)
+    print(f"Loading model from {args.model_name}")
+    
+    # Load model state
+    with open(args.model_name, "rb") as f:
         data = f.read()
-        state = flax.serialization.from_bytes(model, data)
-    assert(state != None)
+        state = model.restore_state(data)
+    assert state is not None, "Failed to load the model state."
 
-    @jax.jit
+    # Define functions to get scene and product embeddings using the model
     def get_scene_embed(x):
-      return model.apply(state["params"], x, method=models_sample.STLModel.get_scene_embed)
-    @jax.jit
+        return model.apply(state['params'], x, method=models.STLModel.get_scene_embed)
+
     def get_product_embed(x):
-      return model.apply(state["params"], x, method=models_sample.STLModel.get_product_embed)
+        return model.apply(state['params'], x, method=models.STLModel.get_product_embed)
 
-    ds = tf.data.Dataset.from_tensor_slices(unique_scenes).map(input_pipeline.process_image_with_id)
-    ds = ds.batch(_BATCH_SIZE.value, drop_remainder=True)
+    # Process scenes and generate embeddings
+    scene_dict = generate_embeddings(unique_scenes, get_scene_embed, input_pipeline, args.batch_size, "scene")
+    save_embeddings(scene_dict, os.path.join(args.out_dir, "scene_embed.json"))
+
+    # Process products and generate embeddings
+    product_dict = generate_embeddings(unique_products, get_product_embed, input_pipeline, args.batch_size, "product")
+    save_embeddings(product_dict, os.path.join(args.out_dir, "product_embed.json"))
+
+def generate_embeddings(unique_items, embed_fn, input_pipeline, batch_size, item_type):
+    """Generate embeddings for scenes or products."""
+    ds = tf.data.Dataset.from_tensor_slices(unique_items).map(input_pipeline.process_image_with_id)
+    ds = ds.batch(batch_size, drop_remainder=True)
     it = ds.as_numpy_iterator()
-    scene_dict = {}
+
+    embeddings = {}
     count = 0
     for id, image in it:
-      count = count + 1
-      if count % 100 == 0:
-        logging.info("Created %d scene embeddings", count * _BATCH_SIZE.value)
-      result = get_scene_embed(image)
-      for i in range(_BATCH_SIZE.value):
-        current_id = id[i].decode("utf-8")
-        tmp = np.array(result[i])
-        current_result = [float(tmp[j]) for j in range(tmp.shape[0])]
-        scene_dict.update({current_id : current_result})
-    scene_filename = os.path.join(_OUTDIR.value, "scene_embed.json")
-    with open(scene_filename, "w") as scene_file:
-      json.dump(scene_dict, scene_file)
+        count += 1
+        if count % 100 == 0:
+            print(f"Created {count * batch_size} {item_type} embeddings.")
+        
+        result = embed_fn(image)
+        for i in range(batch_size):
+            current_id = id[i].decode("utf-8")
+            embeddings[current_id] = result[i].tolist()
 
-    ds = tf.data.Dataset.from_tensor_slices(unique_products).map(input_pipeline.process_image_with_id)
-    ds = ds.batch(_BATCH_SIZE.value, drop_remainder=True)
-    it = ds.as_numpy_iterator()
-    product_dict = {}
-    count = 0
-    for id, image in it:
-      count = count + 1
-      if count % 100 == 0:
-        logging.info("Created %d product embeddings", count * _BATCH_SIZE.value)
-      result = get_product_embed(image)
-      for i in range(_BATCH_SIZE.value):
-        current_id = id[i].decode("utf-8")
-        tmp = np.array(result[i])
-        current_result = [float(tmp[j]) for j in range(tmp.shape[0])]
-        product_dict.update({current_id : current_result})
-    product_filename = os.path.join(_OUTDIR.value, "product_embed.json")
-    with open(product_filename, "w") as product_file:
-      json.dump(product_dict, product_file)
+    return embeddings
+
+def save_embeddings(embeddings, filename):
+    """Save embeddings as a JSON file."""
+    with open(filename, "w") as f:
+        json.dump(embeddings, f)
+    print(f"Embeddings saved to {filename}")
 
 if __name__ == "__main__":
-    app.run(main)
+    main()

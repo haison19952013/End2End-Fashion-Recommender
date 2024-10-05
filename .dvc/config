@@ -1,0 +1,4 @@
+[core]
+    remote = ggcloud_remote
+['remote "ggcloud_remote"']
+    url = gs://shop_the_look/
