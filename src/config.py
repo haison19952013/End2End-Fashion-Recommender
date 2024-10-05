@@ -1,8 +1,11 @@
 class Config():
     def __init__(self):
-        self.data = {'raw_image_path': '../data/shop_the_look-v1',
-                     'train_path': '../data/train.tfds',
-                    'test_path': '../data/test.tfds'}
+        self.seed = 42
+        self.data = {'metadata_path': '../data/fashion.json',
+                    'raw_image_path': '../data/fashion_images_v0',
+                    'num_negative_samples': 5,
+                    'metatrain_path': '../data/meta_train.csv',
+                    'metatest_path': '../data/meta_test.csv'}
         self.train = {'learning_rate': 1e-3,
                       'regularization': 1e-4,
                       'embedding_dim':64,
