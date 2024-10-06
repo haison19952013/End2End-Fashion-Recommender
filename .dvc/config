@@ -1,4 +1,5 @@
 [core]
     remote = ggcloud_remote
+    autostage = true
 ['remote "ggcloud_remote"']
     url = gs://shop_the_look/

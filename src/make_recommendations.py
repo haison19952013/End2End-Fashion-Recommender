@@ -25,7 +25,7 @@ import os
 import argparse
 import numpy as np
 import tensorflow as tf
-import src.pin_util as pin_util
+import pin_util
 
 # Define command-line arguments using argparse
 def parse_args():
@@ -49,8 +49,9 @@ def find_top_k(scene_embedding, product_embeddings, k):
       k: number of top results to return.
     """
     scores = tf.reduce_sum(scene_embedding * product_embeddings, axis=-1)
-    top_k_values, top_k_indices = tf.nn.top_k(scores, k=k)
-    return top_k_values.numpy(), top_k_indices.numpy()
+    result = tf.nn.top_k(scores, k=k)
+    top_k_values, top_k_indices = result.values.numpy(), result.indices.numpy()
+    return top_k_values, top_k_indices
 
 def local_file_to_pin_url(filename):
     """Converts a local filename to a Pinterest URL."""

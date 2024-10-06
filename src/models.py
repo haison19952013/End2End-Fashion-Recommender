@@ -20,10 +20,10 @@ from tensorflow.keras import layers
 class CNN(tf.keras.Model):
     """Simple CNN."""
     
-    def __init__(self, filters, output_size):
+    def __init__(self, filters, embedding_dim):
         super(CNN, self).__init__()
         self.filters = filters
-        self.output_size = output_size
+        self.embedding_dim = embedding_dim
         self.conv_layers = []
         self.bn_layers = []
         
@@ -35,7 +35,7 @@ class CNN(tf.keras.Model):
             self.bn_layers.append(layers.BatchNormalization())
 
         # Final dense layer to map to the desired output size
-        self.dense = layers.Dense(output_size)
+        self.dense = layers.Dense(embedding_dim)
 
     def call(self, inputs, training=False):
         x = inputs
@@ -58,14 +58,14 @@ class CNN(tf.keras.Model):
 class STLModel(tf.keras.Model):
     """Shop the look model that takes in a scene and item and computes a score for them."""
     
-    def __init__(self, output_size):
+    def __init__(self, embedding_dim):
         super(STLModel, self).__init__()
-        self.output_size = output_size
+        self.embedding_dim = embedding_dim
         default_filters = [16, 32, 64, 128]
         
         # Define scene CNN and product CNN using the same architecture
-        self.scene_cnn = CNN(filters=default_filters, output_size=output_size)
-        self.product_cnn = CNN(filters=default_filters, output_size=output_size)
+        self.scene_cnn = CNN(filters=default_filters, embedding_dim=embedding_dim)
+        self.product_cnn = CNN(filters=default_filters, embedding_dim=embedding_dim)
 
     def get_scene_embed(self, scene):
         return self.scene_cnn(scene, training=False)
@@ -112,7 +112,7 @@ class STLModel(tf.keras.Model):
         return {m.name: m.result() for m in self.metrics}
     
     def get_config(self):
-        return {"output_size": self.output_size}
+        return {"embedding_dim": self.embedding_dim}
     
     @classmethod
     def from_config(cls, config):

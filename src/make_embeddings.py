@@ -43,45 +43,6 @@ def parse_args():
     
     return parser.parse_args()
 
-def main():
-    # Parse command-line arguments
-    args = parse_args()
-
-    # Load valid scene-product pairs
-    scene_product = pin_util.get_valid_scene_product(args.image_dir, args.input_file)
-    print(f"Found {len(scene_product)} valid scene product pairs.")
-
-    # Extract unique scenes and products
-    unique_scenes = np.array(list(set(x[0] for x in scene_product)))
-    unique_products = np.array(list(set(x[1] for x in scene_product)))
-    print(f"Found {len(unique_scenes)} unique scenes.")
-    print(f"Found {len(unique_products)} unique products.")
-
-    # Load the model and its parameters
-    model = models.STLModel(output_size=args.output_size)
-    print(f"Loading model from {args.model_name}")
-    
-    # Load model state
-    with open(args.model_name, "rb") as f:
-        data = f.read()
-        state = model.restore_state(data)
-    assert state is not None, "Failed to load the model state."
-
-    # Define functions to get scene and product embeddings using the model
-    def get_scene_embed(x):
-        return model.apply(state['params'], x, method=models.STLModel.get_scene_embed)
-
-    def get_product_embed(x):
-        return model.apply(state['params'], x, method=models.STLModel.get_product_embed)
-
-    # Process scenes and generate embeddings
-    scene_dict = generate_embeddings(unique_scenes, get_scene_embed, input_pipeline, args.batch_size, "scene")
-    save_embeddings(scene_dict, os.path.join(args.out_dir, "scene_embed.json"))
-
-    # Process products and generate embeddings
-    product_dict = generate_embeddings(unique_products, get_product_embed, input_pipeline, args.batch_size, "product")
-    save_embeddings(product_dict, os.path.join(args.out_dir, "product_embed.json"))
-
 def generate_embeddings(unique_items, embed_fn, input_pipeline, batch_size, item_type):
     """Generate embeddings for scenes or products."""
     ds = tf.data.Dataset.from_tensor_slices(unique_items).map(input_pipeline.process_image_with_id)
@@ -107,6 +68,47 @@ def save_embeddings(embeddings, filename):
     with open(filename, "w") as f:
         json.dump(embeddings, f)
     print(f"Embeddings saved to {filename}")
+
+def main():
+    # Parse command-line arguments
+    args = parse_args()
+
+    # Load valid scene-product pairs
+    scene_product = pin_util.get_valid_scene_product(args.image_dir, args.input_file)
+    print(f"Found {len(scene_product)} valid scene product pairs.")
+
+    # Extract unique scenes and products
+    unique_scenes = np.array(list(set(x[0] for x in scene_product)))
+    unique_products = np.array(list(set(x[1] for x in scene_product)))
+    print(f"Found {len(unique_scenes)} unique scenes.")
+    print(f"Found {len(unique_products)} unique products.")
+
+    # Load the model and its parameters
+    model = models.STLModel(embedding_dim=args.output_size)
+    print(f"Loading model from {args.model_name}")
+    
+    # Load model state
+    with open(args.model_name, "rb") as f:
+        data = f.read()
+        state = model.restore_state(data)
+    assert state is not None, "Failed to load the model state."
+
+    # Define functions to get scene and product embeddings using the model
+    def get_scene_embed(x):
+        return model.apply(state['params'], x, method=models.STLModel.get_scene_embed)
+
+    def get_product_embed(x):
+        return model.apply(state['params'], x, method=models.STLModel.get_product_embed)
+
+    # Process scenes and generate embeddings
+    scene_dict = generate_embeddings(unique_scenes, get_scene_embed, input_pipeline, args.batch_size, "scene")
+    save_embeddings(scene_dict, os.path.join(args.out_dir, "scene_embed.json"))
+
+    # Process products and generate embeddings
+    product_dict = generate_embeddings(unique_products, get_product_embed, input_pipeline, args.batch_size, "product")
+    save_embeddings(product_dict, os.path.join(args.out_dir, "product_embed.json"))
+
+
 
 if __name__ == "__main__":
     main()
