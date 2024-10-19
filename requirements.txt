@@ -2,3 +2,7 @@ absl-py==1.1.0
 tensorflow==2.9.0
 typed-ast==1.5.4
 typing_extensions==4.2.0
+numpy==1.26.4
+dvc
+dvc-gs
+mlflow
