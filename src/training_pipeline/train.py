@@ -26,6 +26,7 @@ if gpus:
 config_ = config.Config()
 
 def main():
+    mlflow.set_tracking_uri("file:./mlruns")
     mlflow.set_experiment(config_.train['mlflow_experiment_name'])
     with mlflow.start_run():
         mlflow.log_params({
