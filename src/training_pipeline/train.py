@@ -1,16 +1,14 @@
-import set_seed
-import config
 import os
-from typing import Sequence, Tuple
 import pandas as pd
-
-import numpy as np
 import tensorflow as tf
 import mlflow
 import mlflow.tensorflow
-import input_pipeline
-import models
+from src.utils import set_seed
+from src import config
+from src.data_pipeline import serve_data
+from src.training_pipeline import models
 
+set_seed.apply()
 gpus = tf.config.list_physical_devices('GPU')
 if gpus:
   try:
@@ -42,8 +40,8 @@ def main():
         num_train = len(train_meta)
         num_test = len(test_meta)
 
-        train_ds = input_pipeline.create_dataset(train_meta).repeat().batch(config_.train['batch_size']).prefetch(tf.data.AUTOTUNE)
-        test_ds = input_pipeline.create_dataset(test_meta).repeat().batch(config_.train['batch_size'])
+        train_ds = serve_data.create_dataset(train_meta).repeat().batch(config_.train['batch_size']).prefetch(tf.data.AUTOTUNE)
+        test_ds = serve_data.create_dataset(test_meta).repeat().batch(config_.train['batch_size'])
 
         model = models.STLModel(embedding_dim=config_.train['embedding_dim'])
         optimizer = tf.keras.optimizers.Adam(learning_rate=config_.train['learning_rate'])
