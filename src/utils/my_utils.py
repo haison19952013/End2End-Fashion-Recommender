@@ -82,3 +82,45 @@ def save_embeddings(embeddings, filename):
     with open(filename, "w") as f:
         json.dump(embeddings, f)
     print(f"Embeddings saved to {filename}")
+
+def find_top_k(scene_embedding, product_embeddings, k):
+    """
+    Finds the top K nearest product embeddings to the scene embedding.
+    
+    Args:
+      scene_embedding: embedding vector for the scene
+      product_embedding: embedding vectors for the products.
+      k: number of top results to return.
+    """
+    scores = tf.reduce_sum(scene_embedding * product_embeddings, axis=-1)
+    result = tf.nn.top_k(scores, k=k)
+    top_k_values, top_k_indices = result.values.numpy(), result.indices.numpy()
+    return top_k_values, top_k_indices
+
+def save_results(filename, scene_key, scores_and_indices, index_to_key):
+    """
+    Save results of a scoring run as an HTML document.
+
+    Args:
+      filename: name of file to save as.
+      scene_key: Scene key.
+      scores_and_indices: A tuple of (scores, indices).
+      index_to_key: A dictionary of index to product key.
+    """
+    scores, indices = scores_and_indices
+    with open(filename, "w") as f:
+        f.write("<HTML>\n")
+        scene_img = local_file_to_pin_url(scene_key)
+        f.write(f"Nearest neighbors to {scene_img}<br>\n")
+        for i, (score, idx) in enumerate(zip(scores, indices)):
+            product_key = index_to_key[idx]
+            product_img = local_file_to_pin_url(product_key)
+            f.write(f"Rank {i + 1} Score {score:.6f}<br>{product_img}<br>\n")
+        f.write("</HTML>\n")
+
+def local_file_to_pin_url(filename):
+    """Converts a local filename to a Pinterest URL."""
+    key = filename.split("/")[-1]
+    key = key.split(".")[0]
+    url = key_to_url(key)
+    return f'<img src="{url}">'
