@@ -169,3 +169,4 @@ cython_debug/
 #.idea/
 /data
 /mlruns
+/embedding_data
