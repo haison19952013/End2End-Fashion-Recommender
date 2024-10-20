@@ -15,8 +15,14 @@ get_data:
 get_model:
 	$(dvc) pull model.dvc
 
+get_embedding:
+	$(dvc) pull embedding_data.dvc
+
+make_recommendation:
+	$(python) python src/inference/make_recommendations.py --scene_path data_test/emoi.jpg 
+
 run:
-	$(python) src/train.py
+	$(python) src/training_pipeline/train.py
 
 mlflow:
 	venv/bin/mlflow ui
