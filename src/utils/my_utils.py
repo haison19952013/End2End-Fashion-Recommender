@@ -97,7 +97,7 @@ def find_top_k(scene_embedding, product_embeddings, k):
     top_k_values, top_k_indices = result.values.numpy(), result.indices.numpy()
     return top_k_values, top_k_indices
 
-def save_results(filename, scene_key, scores_and_indices, index_to_key):
+def save_recommendation_to_html(filename, scene_path, scores_and_indices, index_to_key):
     """
     Save results of a scoring run as an HTML document.
 
@@ -110,17 +110,23 @@ def save_results(filename, scene_key, scores_and_indices, index_to_key):
     scores, indices = scores_and_indices
     with open(filename, "w") as f:
         f.write("<HTML>\n")
-        scene_img = local_file_to_pin_url(scene_key)
+        scene_img = map_user_file_to_html_source(scene_path)
         f.write(f"Nearest neighbors to {scene_img}<br>\n")
         for i, (score, idx) in enumerate(zip(scores, indices)):
             product_key = index_to_key[idx]
-            product_img = local_file_to_pin_url(product_key)
+            product_img = map_pin_file_to_html_source(product_key)
             f.write(f"Rank {i + 1} Score {score:.6f}<br>{product_img}<br>\n")
         f.write("</HTML>\n")
 
-def local_file_to_pin_url(filename):
+def map_pin_file_to_html_source(filename):
     """Converts a local filename to a Pinterest URL."""
     key = filename.split("/")[-1]
     key = key.split(".")[0]
     url = key_to_url(key)
     return f'<img src="{url}">'
+
+def map_user_file_to_html_source(scence_path):
+    """Converts a local filename to a Pinterest URL."""
+    abs_path = os.path.abspath(scence_path)
+    assert os.path.exists(abs_path), f"File {abs_path} does not exist."
+    return f'<img src="{abs_path}">'
