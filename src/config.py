@@ -6,8 +6,8 @@ class Config():
                     'num_negative_samples': 5,
                     'metatrain_path': 'data/meta_train.csv',
                     'metatest_path': 'data/meta_test.csv',
-                    'scene_embed_path': 'data/scene_embed.json',
-                    'product_embed_path': 'data/product_embed.json'
+                    'scene_embed_path': 'embedding_data/scene_embed.json',
+                    'product_embed_path': 'embedding_data/product_embed.json'
                     }
         self.train = {'learning_rate': 0.0001618, # Optimal:  0.0001618
                       'regularization': 0.2076, # Optimal:  0.2076
