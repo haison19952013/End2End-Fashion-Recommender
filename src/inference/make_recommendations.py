@@ -25,74 +25,37 @@ import os
 import argparse
 import numpy as np
 import tensorflow as tf
-import pin_util
+from src.utils import my_utils
+from src import config
+import mlflow.tensorflow
 
+
+config_ = config.Config()
 # Define command-line arguments using argparse
 def parse_args():
     parser = argparse.ArgumentParser(description="Given embedding files makes recommendations")
-    
-    parser.add_argument('--product_embed', type=str, required=True, help='Product embedding JSON file')
-    parser.add_argument('--scene_embed', type=str, required=True, help='Scene embedding JSON file')
+    parser.add_argument('--scene_image',default = True ,type=str, help='Image file for scene')
+    parser.add_argument('--product_embed',default = config_.data['product_embed_path'] ,type=str, help='Product embedding JSON file')
     parser.add_argument('--top_k', type=int, default=10, help='Number of top-scoring products to return per scene')
-    parser.add_argument('--output_dir', type=str, default='/tmp', help='Location to write output HTML files')
-    parser.add_argument('--max_results', type=int, default=100, help='Maximum number of scenes to score')
+    parser.add_argument('--output_dir', type=str, default='./output', help='Location to write output HTML files')
     
     return parser.parse_args()
-
-def find_top_k(scene_embedding, product_embeddings, k):
-    """
-    Finds the top K nearest product embeddings to the scene embedding.
-    
-    Args:
-      scene_embedding: embedding vector for the scene
-      product_embedding: embedding vectors for the products.
-      k: number of top results to return.
-    """
-    scores = tf.reduce_sum(scene_embedding * product_embeddings, axis=-1)
-    result = tf.nn.top_k(scores, k=k)
-    top_k_values, top_k_indices = result.values.numpy(), result.indices.numpy()
-    return top_k_values, top_k_indices
-
-def local_file_to_pin_url(filename):
-    """Converts a local filename to a Pinterest URL."""
-    key = filename.split("/")[-1]
-    key = key.split(".")[0]
-    url = pin_util.key_to_url(key)
-    return f'<img src="{url}">'
-
-def save_results(filename, scene_key, scores_and_indices, index_to_key):
-    """
-    Save results of a scoring run as an HTML document.
-
-    Args:
-      filename: name of file to save as.
-      scene_key: Scene key.
-      scores_and_indices: A tuple of (scores, indices).
-      index_to_key: A dictionary of index to product key.
-    """
-    scores, indices = scores_and_indices
-    with open(filename, "w") as f:
-        f.write("<HTML>\n")
-        scene_img = local_file_to_pin_url(scene_key)
-        f.write(f"Nearest neighbors to {scene_img}<br>\n")
-        for i, (score, idx) in enumerate(zip(scores, indices)):
-            product_key = index_to_key[idx]
-            product_img = local_file_to_pin_url(product_key)
-            f.write(f"Rank {i + 1} Score {score:.6f}<br>{product_img}<br>\n")
-        f.write("</HTML>\n")
 
 def main():
     # Parse command-line arguments
     args = parse_args()
     
-    tf.config.set_visible_devices([], 'GPU')  # Disable GPU
-    tf.compat.v1.enable_eager_execution()
+    # load the model from the Model Registry and score
+    model_name = config_.train['model_name']
+    model_uri = f"models:/{model_name}@{'champion'}"
+    loaded_model = mlflow.tensorflow.load_model(model_uri)
+    get_scene_embed = loaded_model.get_scene_embed
+    unique_scenes = np.array([args.scene_image])
+    scene_dict = my_utils.generate_embeddings(unique_scenes, get_scene_embed, 16, "scene")
 
     # Load product and scene embeddings from JSON files
     with open(args.product_embed, "r") as f:
         product_dict = json.load(f)
-    with open(args.scene_embed, "r") as f:
-        scene_dict = json.load(f)
 
     # Map product embeddings and scene embeddings to NumPy arrays
     index_to_key = {}
@@ -106,14 +69,12 @@ def main():
     # Iterate over scenes and find top-k products for each
     for index, (scene_key, scene_vec) in enumerate(scene_dict.items()):
         scene_embed = np.expand_dims(np.array(scene_vec), axis=0)
-        scores_and_indices = find_top_k(scene_embed, product_embeddings, args.top_k)
+        scores_and_indices = my_utils.find_top_k(scene_embed, product_embeddings, args.top_k)
         
         # Save results as HTML
-        filename = os.path.join(args.output_dir, f"{index:05d}.html")
-        save_results(filename, scene_key, scores_and_indices, index_to_key)
+        filename = os.path.join(args.output_dir, f"{scene_key.split('/')[-1]}.html")
+        my_utils.save_results(filename, scene_key, scores_and_indices, index_to_key)
         
-        if index >= args.max_results:
-            break
 
 if __name__ == "__main__":
     main()
