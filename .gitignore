@@ -7,8 +7,9 @@ __pycache__/
 document/
 .vscode/
 tmp/
-data/*.json
-data/fashion_images_v0/*.jpg
+data_test/*.jpg
+data_test/*.png
+output/*.html
 
 # C extensions
 *.so
