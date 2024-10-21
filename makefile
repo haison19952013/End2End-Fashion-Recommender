@@ -9,17 +9,20 @@ setup:
 set_env:
 	export PYTHONPATH="$(pwd):$(pwd)/src/training_pipeline"
 
-get_data:
+clone_data:
 	$(dvc) pull data.dvc
 	
-get_model:
+clone_model:
 	$(dvc) pull model.dvc
 
-get_embedding:
+clone_embedding:
 	$(dvc) pull embedding_data.dvc
 
 make_recommendation:
-	$(python) python src/inference/make_recommendations.py --scene_path data_test/emoi.jpg 
+	$(python) src/inference/make_recommendations.py --scene_path data_test/emoi.jpg 
+
+run_apps:
+	uvicorn src.apps.my_api:app --reload
 
 run:
 	$(python) src/training_pipeline/train.py
