@@ -6,3 +6,6 @@ numpy==1.26.4
 dvc
 dvc-gs
 mlflow
+fastapi
+uvicorn
+imagehash

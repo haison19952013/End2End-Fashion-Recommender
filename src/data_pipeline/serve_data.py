@@ -41,20 +41,29 @@ def normalize_image(img):
   img = (img / 255.0) - 0.5
   return img
 
-def process_image(file_path):
+def process_image_filepath(file_path):
   x = tf.io.read_file(file_path)
-  # x = tf.io.decode_jpeg(x, channels=3)
   x = tf.io.decode_image(x, channels=3)
   x = tf.image.resize_with_crop_or_pad(x, 512, 512)
   x = normalize_image(x)
   return x
 
-def process_image_with_id(id):
-  image = process_image(id)
-  return id, image
+def process_image_filebyte(file_bytes):
+  x = tf.io.decode_image(file_bytes, channels=3)
+  x = tf.image.resize_with_crop_or_pad(x, 512, 512)
+  x = normalize_image(x)
+  return x
+
+def process_image_with_filepath(file_path):
+  image = process_image_filepath(file_path)
+  return file_path, image
+
+def process_image_with_filebyte(file_bytes):
+  image = process_image_filebyte(file_bytes)
+  return 'dummy_id', image
 
 def process_triplet(x):
-  x = (process_image(x[0]), process_image(x[1]), process_image(x[2]))
+  x = (process_image_filepath(x[0]), process_image_filepath(x[1]), process_image_filepath(x[2]))
   return x
 
 def create_dataset(

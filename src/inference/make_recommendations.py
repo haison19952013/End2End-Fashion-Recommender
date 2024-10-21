@@ -1,21 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-#
-#
-# Copyright 2022 Hector Yee, Bryan Bischoff
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 """
   Given embedding files makes recommendations.
 """
@@ -24,11 +6,11 @@ import json
 import os
 import argparse
 import numpy as np
-import tensorflow as tf
 from src.utils import my_utils
 from src import config
-import mlflow.tensorflow
-
+from src.utils import my_utils
+import tensorflow as tf
+import mimetypes
 
 config_ = config.Config()
 # Define command-line arguments using argparse
@@ -38,34 +20,20 @@ def parse_args():
     parser.add_argument('--product_embed',default = config_.data['product_embed_path'] ,type=str, help='Product embedding JSON file')
     parser.add_argument('--top_k', type=int, default=10, help='Number of top-scoring products to return per scene')
     parser.add_argument('--output_dir', type=str, default='./output', help='Location to write output HTML files')
-    
     return parser.parse_args()
 
-def main():
+def main(args):
     # Parse command-line arguments
-    args = parse_args()
     assert os.path.exists(args.scene_path), "Scene image file does not exist"
     
     # load the model from the Model Registry and score
-    model_name = config_.train['model_name']
-    model_uri = f"models:/{model_name}@{'champion'}"
-    loaded_model = mlflow.tensorflow.load_model(model_uri)
+    loaded_model = my_utils.load_registered_model(model_name = config_.train['model_name'], tag = 'champion')
     get_scene_embed = loaded_model.get_scene_embed
     unique_scenes = np.array([args.scene_path])
     scene_dict = my_utils.generate_embeddings(unique_scenes, get_scene_embed, 16, "scene")
 
-    # Load product and scene embeddings from JSON files
-    with open(args.product_embed, "r") as f:
-        product_dict = json.load(f)
-
     # Map product embeddings and scene embeddings to NumPy arrays
-    index_to_key = {}
-    product_embeddings = []
-    for index, (key, vec) in enumerate(product_dict.items()):
-        index_to_key[index] = key
-        product_embeddings.append(np.array(vec))
-    
-    product_embeddings = np.stack(product_embeddings, axis=0)
+    product_embeddings, index_to_key = my_utils.load_product_embedding(args.product_embed)
 
     # Iterate over scenes and find top-k products for each
     for index, (scene_path, scene_vec) in enumerate(scene_dict.items()):
@@ -74,7 +42,9 @@ def main():
         
         # Save results as HTML
         filename = os.path.join(args.output_dir, f"{scene_path.split('/')[-1]}.html")
-        my_utils.save_recommendation_to_html(filename, scene_path, scores_and_indices, index_to_key)
+        scene_bytes = tf.io.read_file(args.scene_path).numpy()  # Convert Tensor to bytes
+        mime_type, _ = mimetypes.guess_type(args.scene_path)
+        my_utils.export_recommendation_to_html(scene_bytes, mime_type, scores_and_indices, index_to_key, save = True, filename = filename)
         
 if __name__ == "__main__":
-    main()
+    main(args = parse_args())

@@ -2,18 +2,15 @@
 """
   Generates embedding files given a model and a catalog.
 """
-from src import config
 import numpy as np
+from src import config
 from src.utils import my_utils  # Utility for getting the valid scene-product pairs
-import mlflow.tensorflow
 
 def main():
   config_ = config.Config()
 
   # load the model from the Model Registry and score
-  model_name = config_.train['model_name']
-  model_uri = f"models:/{model_name}@{'champion'}"
-  loaded_model = mlflow.tensorflow.load_model(model_uri)
+  loaded_model = my_utils.load_registered_model(model_name = config_.train['model_name'], tag = 'champion')
   print("--")
   
   get_scene_embed = loaded_model.get_scene_embed

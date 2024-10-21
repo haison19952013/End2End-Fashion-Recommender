@@ -17,7 +17,7 @@
 # limitations under the License.
 
 """
-  Utilities for handling pinterest images.
+  Utilities for multipurpose use.
 """
 
 from typing import Sequence, Tuple
@@ -25,6 +25,10 @@ import os
 import json
 import tensorflow as tf
 from src.data_pipeline import serve_data 
+import mlflow
+import base64
+import numpy as np
+
 
 def key_to_url(key: str)-> str:
     """
@@ -57,9 +61,14 @@ def get_valid_scene_product(image_dir:str, input_file: str) -> Sequence[Tuple[st
                 scene_product.append([scene, product])
     return scene_product
 
-def generate_embeddings(unique_items, embed_fn, batch_size, item_type):
+def generate_embeddings(unique_items, embed_fn, batch_size, item_type, file_type = 'path'):
     """Generate embeddings for scenes or products."""
-    ds = tf.data.Dataset.from_tensor_slices(unique_items).map(serve_data.process_image_with_id)
+    if file_type is 'path':
+        ds = tf.data.Dataset.from_tensor_slices(unique_items).map(serve_data.process_image_with_filepath)
+    elif file_type is 'byte':
+        ds = tf.data.Dataset.from_tensor_slices(unique_items).map(serve_data.process_image_with_filebyte)
+    else:
+        raise ValueError("file_type must be 'path' or 'byte'")
     ds = ds.batch(batch_size, drop_remainder=False)
     it = ds.as_numpy_iterator()
 
@@ -97,26 +106,48 @@ def find_top_k(scene_embedding, product_embeddings, k):
     top_k_values, top_k_indices = result.values.numpy(), result.indices.numpy()
     return top_k_values, top_k_indices
 
-def save_recommendation_to_html(filename, scene_path, scores_and_indices, index_to_key):
+def export_recommendation_to_html(scene_bytes, mime_type, scores_and_indices, index_to_key, save=True, filename=None):
     """
-    Save results of a scoring run as an HTML document.
+    Save or return results of a scoring run as an HTML document.
 
     Args:
-      filename: name of file to save as.
-      scene_key: Scene key.
+      scene_bytes: Byte content of the scene (image data).
+      mime_type: MIME type of the image (e.g., 'image/jpeg' or 'image/png').
       scores_and_indices: A tuple of (scores, indices).
-      index_to_key: A dictionary of index to product key.
+      index_to_key: A dictionary mapping index to product key.
+      save: Whether to save the HTML to a file (default is True).
+      filename: Name of the file to save as (only required if save=True).
     """
+    # If saving is requested, ensure filename is provided
+    if save and not filename:
+        raise ValueError("Filename must be provided if save=True")
+
     scores, indices = scores_and_indices
-    with open(filename, "w") as f:
-        f.write("<HTML>\n")
-        scene_img = map_user_file_to_html_source(scene_path)
-        f.write(f"Nearest neighbors to {scene_img}<br>\n")
-        for i, (score, idx) in enumerate(zip(scores, indices)):
-            product_key = index_to_key[idx]
-            product_img = map_pin_file_to_html_source(product_key)
-            f.write(f"Rank {i + 1} Score {score:.6f}<br>{product_img}<br>\n")
-        f.write("</HTML>\n")
+
+    # Start generating the HTML content
+    html_content = "<HTML>\n"
+    
+    # Create the HTML for the scene image
+    scene_img = map_user_file_to_html_source(scene_bytes, mime_type)
+    html_content += f"Nearest neighbors to {scene_img}<br>\n"
+    
+    # Generate the HTML for the recommendations
+    for i, (score, idx) in enumerate(zip(scores, indices)):
+        product_key = index_to_key[idx]
+        product_img = map_pin_file_to_html_source(product_key)  # Assuming this function exists
+        html_content += f"Rank {i + 1} Score {score:.6f}<br>{product_img}<br>\n"
+    
+    html_content += "</HTML>\n"
+
+    # If save is True, write the content to the specified file
+    if save:
+        with open(filename, "w") as f:
+            f.write(html_content)
+    else:
+        # If save is False, return the HTML content as a string
+        return html_content
+
+
 
 def map_pin_file_to_html_source(filename):
     """Converts a local filename to a Pinterest URL."""
@@ -125,8 +156,34 @@ def map_pin_file_to_html_source(filename):
     url = key_to_url(key)
     return f'<img src="{url}">'
 
-def map_user_file_to_html_source(scence_path):
-    """Converts a local filename to a Pinterest URL."""
-    abs_path = os.path.abspath(scence_path)
-    assert os.path.exists(abs_path), f"File {abs_path} does not exist."
-    return f'<img src="{abs_path}">'
+def map_user_file_to_html_source(file_bytes, mime_type=None):
+    """Converts a local image file to a base64-encoded image for HTML embedding."""
+    
+    # Encode the file bytes into Base64
+    encoded_image = base64.b64encode(file_bytes).decode("utf-8")
+    
+    # Ensure we have a valid MIME type (default to image/jpeg if unknown)
+    if mime_type is None:
+        mime_type = "image/jpeg"
+    
+    # Return the image embedded as a data URL in HTML
+    return f'<img src="data:{mime_type};base64,{encoded_image}">'
+
+
+def load_registered_model(model_name, tag = 'champion'):
+    model_uri = f"models:/{model_name}@{tag}"
+    loaded_model = mlflow.tensorflow.load_model(model_uri)
+    return loaded_model
+
+def load_product_embedding(product_embed_path):
+    with open(product_embed_path, "r") as f:
+        product_dict = json.load(f)
+    # Map product embeddings and scene embeddings to NumPy arrays
+    index_to_key = {}
+    product_embeddings = []
+    for index, (key, vec) in enumerate(product_dict.items()):
+        index_to_key[index] = key
+        product_embeddings.append(np.array(vec))
+    
+    product_embeddings = np.stack(product_embeddings, axis=0)
+    return product_embeddings, index_to_key
