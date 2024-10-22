@@ -7,11 +7,17 @@ setup:
 	$(python) -m pip install --upgrade pip
 	$(pip) install -r requirements.txt
 
-run_apps:
+run_api_apps:
 	@PYTHONPATH=$$(pwd):$$(pwd)/src/training_pipeline; \
 	export PYTHONPATH=$$PYTHONPATH; \
 	echo "Running with PYTHONPATH=$$PYTHONPATH"; \
 	uvicorn src.apps.my_api:app --reload
+
+run_web_apps:
+	@PYTHONPATH=$$(pwd):$$(pwd)/src/training_pipeline; \
+	export PYTHONPATH=$$PYTHONPATH; \
+	echo "Running with PYTHONPATH=$$PYTHONPATH"; \
+	streamlit run src/web_apps/my_apps.py
 
 clone_data:
 	$(dvc) pull data.dvc
