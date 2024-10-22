@@ -64,15 +64,16 @@ async def ocr(
         logging.info("Get the hash of the image")
         img = Image.open(io.BytesIO(scene_bytes))
         img_hash = imagehash.average_hash(img)
+        cache_key = f"{img_hash}_{num_recommendations}"
         
-        logging.info(f"hash: {img_hash}")
+        logging.info(f"cache_key: {cache_key}")
         # Get the recommendation from the cache if available, otherwise compute it and store it in the cache
         logging.info(
             "Get the recommendation from the cache if available, otherwise compute it and store it in the cache"
         )
-        if img_hash in cache:
+        if cache_key in cache:
             logging.info("Getting result from cache!")
-            f = cache[img_hash]
+            f = cache[cache_key]
         else:
             logging.info("Making a new recommendation.....")
             scene = np.array([scene_bytes])
@@ -103,7 +104,7 @@ async def ocr(
                 f = my_utils.export_recommendation_to_html(
                     scene_bytes, mime_type, scores_and_indices, index_to_key, save=False
                 )
-                cache[img_hash] = f  # Store the result in the cache for future use
+                cache[cache_key] = f  # Store the result in the cache for future use
                 logging.info("Successfully made recommendation")
         response["success"] = True
         response["message"] = "Successfully made recommendation"
