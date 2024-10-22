@@ -1,13 +1,17 @@
 python = venv/bin/python
 pip = venv/bin/pip
+.PHONY: run_apps
 
 setup:
 	python3 -m venv venv
 	$(python) -m pip install --upgrade pip
 	$(pip) install -r requirements.txt
 
-set_env:
-	export PYTHONPATH="$(pwd):$(pwd)/src/training_pipeline"
+run_apps:
+	@PYTHONPATH=$$(pwd):$$(pwd)/src/training_pipeline; \
+	export PYTHONPATH=$$PYTHONPATH; \
+	echo "Running with PYTHONPATH=$$PYTHONPATH"; \
+	uvicorn src.apps.my_api:app --reload
 
 clone_data:
 	$(dvc) pull data.dvc
@@ -21,8 +25,7 @@ clone_embedding:
 make_recommendation:
 	$(python) src/inference/make_recommendations.py --scene_path data_test/emoi.jpg 
 
-run_apps:
-	uvicorn src.apps.my_api:app --reload
+
 
 run:
 	$(python) src/training_pipeline/train.py
