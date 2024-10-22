@@ -18,6 +18,9 @@ COPY ./src ./src
 COPY ./mlruns ./mlruns
 COPY ./embedding_data ./embedding_data
 
+# Install curl for health check later in docker-compose
+RUN apt-get update && apt-get install -y curl
+
 # Expose the port your app runs on
 EXPOSE 8000
 
