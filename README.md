@@ -1,3 +1,40 @@
+## Build Docker image for API server
+### Build
+
+```bash
+docker build -t haison19952013/fashion_recsys:v0.0.0 -f src/apps/Dockerfile .
+```
+### Run
+```bash
+docker run -d --name my_app -p 8000:8000 haison19952013/fashion_recsys:v0.0.0
+```
+
+### Debug
+```bash
+docker run -it --name my_debug_container haison19952013/fashion_recsys:v0.0.0 /bin/bash
+```
+
+## Build Docker image for Web apps
+### Build
+
+```bash
+docker build -t haison19952013/fashion_recsys_web:v0.0.0 -f src/apps/Dockerfile .
+```
+### Run
+```bash
+docker run -d --name my_app -p 8051:8051 haison19952013/fashion_recsys_web:v0.0.0
+```
+
+### Debug
+```bash
+docker run -it --name my_debug_container haison19952013/fashion_recsys_web:v0.0.0 /bin/bash
+```
+
+## Run Docker compose to start both API server and Web apps
+```bash
+docker compose -f api-web-docker-compose.yaml up -d 
+```
+
 Installation instructions
 =========================
 
