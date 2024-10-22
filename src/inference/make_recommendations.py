@@ -44,7 +44,7 @@ def main(args):
         filename = os.path.join(args.output_dir, f"{scene_path.split('/')[-1]}.html")
         scene_bytes = tf.io.read_file(args.scene_path).numpy()  # Convert Tensor to bytes
         mime_type, _ = mimetypes.guess_type(args.scene_path)
-        my_utils.export_recommendation_to_html(scene_bytes, mime_type, scores_and_indices, index_to_key, save = True, filename = filename)
+        my_utils.export_recommendation(scene_bytes, mime_type, scores_and_indices, index_to_key, to_html = True, filename = filename)
         
 if __name__ == "__main__":
     main(args = parse_args())

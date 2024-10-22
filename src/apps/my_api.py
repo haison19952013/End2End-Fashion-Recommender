@@ -20,7 +20,7 @@ config_ = config.Config()
 class PredictOut(BaseModel):
     success: bool
     message: str
-    recommendation: str
+    recommendation: dict
 
 
 app = FastAPI()
@@ -46,7 +46,7 @@ async def ocr(
     file: UploadFile = File(...),  # File upload
 ):
     response = {}
-    f = ""  # Initialize f to avoid NameError in case of failure
+    recommendation_dict = {}  # Initialize f to avoid NameError in case of failure
     try:
         # Read image from the uploaded file
         logging.info("Read image from the uploaded file")
@@ -73,7 +73,7 @@ async def ocr(
         )
         if cache_key in cache:
             logging.info("Getting result from cache!")
-            f = cache[cache_key]
+            recommendation_dict = cache[cache_key]
         else:
             logging.info("Making a new recommendation.....")
             scene = np.array([scene_bytes])
@@ -101,10 +101,10 @@ async def ocr(
                 )
 
                 # Save results as HTML (set save=False if you want the HTML returned)
-                f = my_utils.export_recommendation_to_html(
-                    scene_bytes, mime_type, scores_and_indices, index_to_key, save=False
+                recommendation_dict = my_utils.export_recommendation(
+                    scene_bytes, mime_type, scores_and_indices, index_to_key, to_html=False
                 )
-                cache[cache_key] = f  # Store the result in the cache for future use
+                cache[cache_key] = recommendation_dict  # Store the result in the cache for future use
                 logging.info("Successfully made recommendation")
         response["success"] = True
         response["message"] = "Successfully made recommendation"
@@ -112,6 +112,6 @@ async def ocr(
     except Exception as e:
         response["success"] = False
         response["message"] = str(e)
-    response["recommendation"] = f  # Set to None in case of error
+    response["recommendation"] = recommendation_dict  # Set to None in case of error
 
     return response

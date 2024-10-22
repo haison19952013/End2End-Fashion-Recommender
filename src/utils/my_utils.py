@@ -106,7 +106,7 @@ def find_top_k(scene_embedding, product_embeddings, k):
     top_k_values, top_k_indices = result.values.numpy(), result.indices.numpy()
     return top_k_values, top_k_indices
 
-def export_recommendation_to_html(scene_bytes, mime_type, scores_and_indices, index_to_key, save=True, filename=None):
+def export_recommendation(scene_bytes, mime_type, scores_and_indices, index_to_key, to_html=True, filename=None):
     """
     Save or return results of a scoring run as an HTML document.
 
@@ -119,7 +119,7 @@ def export_recommendation_to_html(scene_bytes, mime_type, scores_and_indices, in
       filename: Name of the file to save as (only required if save=True).
     """
     # If saving is requested, ensure filename is provided
-    if save and not filename:
+    if to_html and not filename:
         raise ValueError("Filename must be provided if save=True")
 
     scores, indices = scores_and_indices
@@ -127,25 +127,29 @@ def export_recommendation_to_html(scene_bytes, mime_type, scores_and_indices, in
     # Start generating the HTML content
     html_content = "<HTML>\n"
     
+    
     # Create the HTML for the scene image
-    scene_img = map_user_file_to_html_source(scene_bytes, mime_type)
-    html_content += f"Nearest neighbors to {scene_img}<br>\n"
+    scene_img_html_src = map_user_file_to_html_source(scene_bytes, mime_type)
+    html_content += f"Nearest neighbors to {scene_img_html_src}<br>\n"
+    img_html_dict = {"scene": scene_img_html_src, 'recommendation':[], 'score':[]}
     
     # Generate the HTML for the recommendations
     for i, (score, idx) in enumerate(zip(scores, indices)):
         product_key = index_to_key[idx]
-        product_img = map_pin_file_to_html_source(product_key)  # Assuming this function exists
-        html_content += f"Rank {i + 1} Score {score:.6f}<br>{product_img}<br>\n"
+        product_img_html_src = map_pin_file_to_html_source(product_key)  # Assuming this function exists
+        html_content += f"Rank {i + 1} Score {score:.6f}<br>{product_img_html_src}<br>\n"
+        img_html_dict['recommendation'].append(product_img_html_src)
+        img_html_dict['score'].append(score)
     
     html_content += "</HTML>\n"
 
     # If save is True, write the content to the specified file
-    if save:
+    if to_html:
         with open(filename, "w") as f:
             f.write(html_content)
     else:
         # If save is False, return the HTML content as a string
-        return html_content
+        return img_html_dict
 
 
 
