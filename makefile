@@ -1,19 +1,19 @@
 python = venv/bin/python
 pip = venv/bin/pip
-.PHONY: run_api_apps
+.PHONY: run_api_service
 
 setup:
 	python3 -m venv venv
 	$(python) -m pip install --upgrade pip
 	$(pip) install -r requirements.txt
 
-run_api_apps:
+run_api_service:
 	@PYTHONPATH=$$(pwd):$$(pwd)/src/training_pipeline; \
 	export PYTHONPATH=$$PYTHONPATH; \
 	echo "Running with PYTHONPATH=$$PYTHONPATH"; \
 	uvicorn src.api_service.my_api:app --reload
 
-run_web_apps:
+run_web_service:
 	@PYTHONPATH=$$(pwd):$$(pwd)/src/training_pipeline; \
 	export PYTHONPATH=$$PYTHONPATH; \
 	echo "Running with PYTHONPATH=$$PYTHONPATH"; \
