@@ -2,7 +2,7 @@
 ### Build
 
 ```bash
-docker build -t haison19952013/fashion_recsys:v0.0.0 -f src/apps/Dockerfile .
+docker build -t haison19952013/fashion_recsys:v0.0.0 -f src/api_service/Dockerfile .
 ```
 ### Run
 ```bash
@@ -18,7 +18,7 @@ docker run -it --name my_debug_container haison19952013/fashion_recsys:v0.0.0 /b
 ### Build
 
 ```bash
-docker build -t haison19952013/fashion_recsys_web:v0.0.0 -f src/apps/Dockerfile .
+docker build -t haison19952013/fashion_recsys_web:v0.0.0 -f src/web_service/Dockerfile .
 ```
 ### Run
 ```bash
