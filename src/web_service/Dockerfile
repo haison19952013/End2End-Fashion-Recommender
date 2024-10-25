@@ -20,4 +20,4 @@ COPY ./src ./src
 EXPOSE 8501
 
 # Define the command to run your application
-CMD ["streamlit", "run", "src/web_apps/my_apps.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "src/web_service/my_web.py", "--server.port=8501", "--server.address=0.0.0.0"]

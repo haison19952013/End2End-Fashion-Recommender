@@ -1,6 +1,6 @@
 import streamlit as st
-from src.web_apps.sidebar import login, upload_image
-from src.web_apps.main_page import main
+from src.web_service.sidebar import login, upload_image
+from src.web_service.main_page import main
 
 st.set_page_config(
     page_title="Fashion Recommender System",
