@@ -8,7 +8,7 @@ WORKDIR /app
 ENV PYTHONPATH="${PYTHONPATH}:/app:/app/src/training_pipeline"
 
 # Copy the requirements file into the container first
-COPY ./src/apps/requirements.txt ./requirements.txt
+COPY ./src/api_service/requirements.txt ./requirements.txt
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt

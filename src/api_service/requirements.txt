@@ -5,3 +5,13 @@ fastapi==0.115.2
 uvicorn==0.32.0
 ImageHash==4.3.1
 python-multipart==0.0.12
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-instrumentation-asgi
+opentelemetry-instrumentation-fastapi
+opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-logging
+opentelemetry-exporter-jaeger
+opentelemetry-exporter-otlp-proto-grpc
+opentelemetry-exporter-prometheus 
+prometheus-client

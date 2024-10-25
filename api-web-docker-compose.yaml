@@ -1,28 +1,48 @@
 version: '3.8'
+
 services:
   my_api:
-    image: haison19952013/fashion_recsys:v0.0.0  # Adjust the name if needed
+    image: haison19952013/fashion_recsys:v0.0.0
     ports:
-      - "8000:8000"  # Expose FastAPI on port 8000
+      - "8000:8000"
     environment:
       - PYTHONPATH=/app:/app/src/training_pipeline
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://my_api:8000/healthy_check"]  # Adjust endpoint as needed
-      interval: 30s  # Interval between health checks
-      timeout: 10s   # Timeout for each check
-      retries: 3     # Number of retries before considering the service unhealthy
+      test: ["CMD", "curl", "-f", "http://my_api:8000/healthy_check"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     networks:
-      - my_network  # Connect to the custom network
+      - my_network
+    depends_on:
+      jaeger:
+        condition: service_healthy  # Wait for Jaeger to be healthy
 
   my_web:
-    image: haison19952013/fashion_recsys_web:v0.0.0  # Adjust the name if needed
+    image: haison19952013/fashion_recsys_web:v0.0.0
     ports:
-      - "8501:8501"  # Expose Streamlit on port 8501
+      - "8501:8501"
     depends_on:
       my_api:
-        condition: service_healthy  # Ensure FastAPI is healthy before starting Streamlit
+        condition: service_healthy
     networks:
-      - my_network  # Connect to the custom network
+      - my_network
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.47
+    container_name: jaeger
+    restart: unless-stopped
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:16686"]  # Check if Jaeger UI is accessible
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s  # Give some time for initial startup
+    networks:
+      - my_network
 
 networks:
-  my_network:  # Define the custom network
+  my_network:
