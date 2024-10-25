@@ -1,6 +1,6 @@
 python = venv/bin/python
 pip = venv/bin/pip
-.PHONY: run_apps
+.PHONY: run_api_apps
 
 setup:
 	python3 -m venv venv
@@ -11,13 +11,13 @@ run_api_apps:
 	@PYTHONPATH=$$(pwd):$$(pwd)/src/training_pipeline; \
 	export PYTHONPATH=$$PYTHONPATH; \
 	echo "Running with PYTHONPATH=$$PYTHONPATH"; \
-	uvicorn src.apps.my_api:app --reload
+	uvicorn src.api_service.my_api:app --reload
 
 run_web_apps:
 	@PYTHONPATH=$$(pwd):$$(pwd)/src/training_pipeline; \
 	export PYTHONPATH=$$PYTHONPATH; \
 	echo "Running with PYTHONPATH=$$PYTHONPATH"; \
-	streamlit run src/web_apps/my_apps.py
+	streamlit run src/web_service/my_web.py
 
 clone_data:
 	$(dvc) pull data.dvc
