@@ -43,6 +43,6 @@ services:
       start_period: 10s  # Give some time for initial startup
     networks:
       - my_network
-
+  
 networks:
   my_network:
