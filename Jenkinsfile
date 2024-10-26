@@ -8,12 +8,37 @@ pipeline {
     }
     stages {
         stage('Deploy') {
+            when {
+                changeset "src/**/*"  // Only run if changes are in the src folder
+            }
             steps {
+                script {
+                    currentBuild.displayName = "Deploying Application"
+                    env.CHANGE_DETECTED = 'true' // Set a flag to indicate changes were detected
+                }
                 sh 'docker compose -f $COMPOSE_FILE up -d'
             }
         }
     }
     post {
+        success {
+            script {
+                if (env.CHANGE_DETECTED == 'true') {
+                    echo 'Deployment completed successfully! Changes in src/ folder were detected.'
+                } else {
+                    echo 'Deployment completed successfully! No changes in src/ folder detected.'
+                }
+            }
+        }
+        failure {
+            script {
+                if (env.CHANGE_DETECTED == 'true') {
+                    echo 'Deployment failed! Changes in src/ folder were detected.'
+                } else {
+                    echo 'Deployment failed! No changes in src/ folder detected.'
+                }
+            }
+        }
         always {
             sh 'docker system prune -f'
         }
