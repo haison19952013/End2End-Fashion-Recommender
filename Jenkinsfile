@@ -26,7 +26,7 @@ pipeline {
                 if (env.CHANGE_DETECTED == 'true') {
                     echo 'Deployment completed successfully! Changes in src/ folder were detected.'
                 } else {
-                    echo 'Deployment completed successfully! No changes in src/ folder detected.'
+                    echo 'No need for Deployment! No changes in src/ folder detected.'
                 }
             }
         }
@@ -35,7 +35,7 @@ pipeline {
                 if (env.CHANGE_DETECTED == 'true') {
                     echo 'Deployment failed! Changes in src/ folder were detected.'
                 } else {
-                    echo 'Deployment failed! No changes in src/ folder detected.'
+                    echo 'Some errors occur! No changes in src/ folder detected.'
                 }
             }
         }
