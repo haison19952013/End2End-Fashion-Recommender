@@ -35,6 +35,20 @@ docker run -it --name my_debug_container haison19952013/fashion_recsys_web:v0.0.
 docker compose -f api-web-docker-compose.yaml up -d 
 ```
 
+## Test Helm chart to deploy the whole system in minikube using NodePort
+### Build
+```bash
+kubectl create ns rec-sys-serving
+kubens rec-sys-serving
+cd helm-charts/rec-sys-services
+helm upgrade --install rec-sys-services .
+```
+### Get my-web-service URL
+```bash
+minikube service my-web-service --url -n rec-sys-serving
+```
+
+
 Installation instructions
 =========================
 
