@@ -171,3 +171,7 @@ cython_debug/
 /data
 /mlruns
 /embedding_data
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/.terraform/providers/registry.terraform.io/hashicorp/google/4.80.0/linux_amd64/terraform-provider-google_v4.80.0_x5
+terraform/.terraform.lock.hcl
