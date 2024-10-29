@@ -39,7 +39,7 @@ def main(uploaded_file, num_recommendations, make_recommendation):
             
             # Make a POST request to the FastAPI endpoint
             try:
-                response = requests.post("http://my_api:8000/recsys", files=files, data=data) # Change the URL to the FastAPI endpoint
+                response = requests.post("http://my-api-service:8000/recsys", files=files, data=data) # Change the URL to the FastAPI endpoint
                 # response = requests.post("http://localhost:8000/recsys", files=files, data=data) # For testing 
  
                 # Check the response status and display the result
