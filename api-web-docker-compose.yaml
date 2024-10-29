@@ -1,14 +1,14 @@
 version: '3.8'
 
 services:
-  my_api:
+  my-api-service:
     image: haison19952013/fashion_recsys:v0.0.0
     ports:
       - "8000:8000"
     environment:
       - PYTHONPATH=/app:/app/src/training_pipeline
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://my_api:8000/healthy_check"]
+      test: ["CMD", "curl", "-f", "http://my-api-service:8000/healthy_check"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -18,12 +18,12 @@ services:
       jaeger:
         condition: service_healthy  # Wait for Jaeger to be healthy
 
-  my_web:
+  my-web-service:
     image: haison19952013/fashion_recsys_web:v0.0.0
     ports:
       - "8501:8501"
     depends_on:
-      my_api:
+      my-api-service:
         condition: service_healthy
     networks:
       - my_network
