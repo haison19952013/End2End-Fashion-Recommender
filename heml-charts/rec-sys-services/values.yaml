@@ -1,0 +1,20 @@
+# values.yaml
+
+# Configuration for the my_api service
+myApi:
+  image: "haison19952013/fashion_recsys:latest"  # Docker image for my_api
+  port: 8000                                     # Port exposed by my_api
+  env:
+    PYTHONPATH: "/app:/app/src/training_pipeline" # Environment variable for Python path
+
+# Configuration for the my_web service
+myWeb:
+  image: "haison19952013/fashion_recsys_web:latest" # Docker image for my_web
+  port: 8501                                        # Port exposed by my_web
+
+# Configuration for the jaeger service
+jaeger:
+  image: "jaegertracing/all-in-one:1.47" # Docker image for Jaeger
+  ports:
+    - 6831                               # UDP port for traces
+    - 16686                              # HTTP port for Jaeger UI

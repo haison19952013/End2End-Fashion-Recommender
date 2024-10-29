@@ -1,0 +1,54 @@
+# templates/service.yaml
+
+# Service for my-api-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-api-service                   # Service name as my-api-service
+  namespace: rec-sys-serving      # Namespace for the service
+spec:
+  type: ClusterIP                 # Use ClusterIP for internal access
+  ports:
+    - port: {{ .Values.myApi.port }}
+      targetPort: {{ .Values.myApi.port }}
+      protocol: TCP
+  selector:
+    app: my-api-service              # Ensure Deployment uses this label
+
+# Service for my-web-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-web-service                    # Service name as my_web-service
+  namespace: rec-sys-serving      # Namespace for the service
+spec:
+  type: NodePort                  # Allows external access in Minikube
+  ports:
+    - port: {{ .Values.myWeb.port }}
+      targetPort: {{ .Values.myWeb.port }}
+      protocol: TCP
+  selector:
+    app: my-web-service           # Ensure Deployment uses this label
+
+# Service for my_jaeger
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger               # Service name as my_jaeger
+  namespace: rec-sys-serving      # Namespace for the service
+spec:
+  type: NodePort                 # Use ClusterIP for internal access
+  ports:
+    - name: jaeger-trace
+      port: 6831
+      targetPort: 6831
+      protocol: UDP
+    - name: jaeger-ui
+      port: 16686
+      targetPort: 16686
+      protocol: TCP
+  selector:
+    app: jaeger            # Ensure Deployment uses this label

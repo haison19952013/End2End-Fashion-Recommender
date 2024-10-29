@@ -1,0 +1,93 @@
+# templates/deployment.yaml
+
+# Deployment for my_api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-api-service                       # Use underscore naming
+  namespace: rec-sys-serving
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-api-service
+  template:
+    metadata:
+      labels:
+        app: my-api-service
+    spec:
+      containers:
+      - name: my-api-service
+        image: {{ .Values.myApi.image }}
+        ports:
+        - containerPort: {{ .Values.myApi.port }}
+        env:
+        - name: PYTHONPATH
+          value: {{ .Values.myApi.env.PYTHONPATH }}
+        readinessProbe:
+          httpGet:
+            path: /healthy_check
+            port: {{ .Values.myApi.port }}
+          initialDelaySeconds: 10
+          periodSeconds: 10
+
+# Deployment for my_web
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-web-service                       # Use underscore naming
+  namespace: rec-sys-serving
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-web-service
+  template:
+    metadata:
+      labels:
+        app: my-web-service
+    spec:
+      containers:
+      - name: my-web-service
+        image: {{ .Values.myWeb.image }}
+        ports:
+        - containerPort: {{ .Values.myWeb.port }}
+        readinessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.myWeb.port }}
+          initialDelaySeconds: 10
+          periodSeconds: 10
+
+# Deployment for jaeger
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger                    # Use underscore naming
+  namespace: rec-sys-serving
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+  template:
+    metadata:
+      labels:
+        app: jaeger
+    spec:
+      containers:
+      - name: jaeger
+        image: {{ .Values.jaeger.image }}
+        ports:
+        - containerPort: 6831
+          protocol: UDP
+        - containerPort: 16686
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 16686
+          initialDelaySeconds: 10
+          periodSeconds: 10
