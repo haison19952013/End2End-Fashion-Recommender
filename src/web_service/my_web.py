@@ -22,4 +22,3 @@ if st.session_state.logged_in:
 
 else:
     st.warning("Please login to continue")
-    print('This is for testing Jenkins')
