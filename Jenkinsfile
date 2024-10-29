@@ -7,16 +7,28 @@ pipeline {
         registryCredential = 'dockerhub'
     }
     stages {
+        stage('Pull Latest Images') {
+            steps {
+                script {
+                    echo "Pulling the latest images..."
+                    sh "docker pull ${registry_api}:latest"
+                    sh "docker pull ${registry_web}:latest"
+                }
+            }
+        }
         stage('Deploy') {
             when {
-                changeset "src/**/*"  // Only run if changes are in the src folder
+                anyOf {
+                    changeset "src/**/*"       // Trigger if changes are in the src folder
+                    changeset "Jenkinsfile"     // Trigger if Jenkinsfile has changed
+                }
             }
             steps {
                 script {
                     currentBuild.displayName = "Deploying Application"
                     env.CHANGE_DETECTED = 'true' // Set a flag to indicate changes were detected
                 }
-                sh 'docker compose -f $COMPOSE_FILE up -d'
+                sh "docker compose -f ${COMPOSE_FILE} up -d"
             }
         }
     }
@@ -24,18 +36,18 @@ pipeline {
         success {
             script {
                 if (env.CHANGE_DETECTED == 'true') {
-                    echo 'Deployment completed successfully! Changes in src/ folder were detected.'
+                    echo 'Deployment completed successfully! Changes in src/ folder or Jenkinsfile were detected.'
                 } else {
-                    echo 'No need for Deployment! No changes in src/ folder detected.'
+                    echo 'No need for Deployment! No changes in src/ folder or Jenkinsfile detected.'
                 }
             }
         }
         failure {
             script {
                 if (env.CHANGE_DETECTED == 'true') {
-                    echo 'Deployment failed! Changes in src/ folder were detected.'
+                    echo 'Deployment failed! Changes in src/ folder or Jenkinsfile were detected.'
                 } else {
-                    echo 'Some errors occur! No changes in src/ folder detected.'
+                    echo 'Some errors occurred! No changes in src/ folder or Jenkinsfile detected.'
                 }
             }
         }
